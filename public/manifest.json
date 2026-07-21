@@ -1,0 +1,15 @@
+{
+  "name": "Civic Twin",
+  "short_name": "CivicTwin",
+  "start_url": "/?view=public",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2099/2099163.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

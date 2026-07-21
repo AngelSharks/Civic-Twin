@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civic Twin Demo Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .animate-pulse-fast { animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-6 overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-slate-950 to-slate-950 opacity-40"></div>
+    
+    <div id="login-card" class="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-[3rem] p-10 shadow-2xl relative z-10 transition-all duration-500">
+        <div class="text-center mb-10">
+            <div class="w-20 h-20 bg-blue-700 rounded-3xl mx-auto flex items-center justify-center text-4xl mb-6 shadow-2xl shadow-blue-950/40">🛰️</div>
+            <h2 class="text-3xl font-black text-white tracking-tight uppercase">CIVIC TWIN DEMO LOGIN</h2>
+            <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-3">Authorized Access Required</p>
+        </div>
+
+        <form id="login-form" class="space-y-6">
+            <div class="space-y-4">
+                <input 
+                    type="text" 
+                    id="username"
+                    class="w-full px-6 py-5 bg-slate-950 border border-slate-700 rounded-2xl text-white outline-none font-bold focus:border-blue-500 transition-colors"
+                    placeholder="Admin ID"
+                    required
+                >
+                <input 
+                    type="password" 
+                    id="password"
+                    class="w-full px-6 py-5 bg-slate-950 border border-slate-700 rounded-2xl text-white outline-none font-bold focus:border-blue-500 transition-colors"
+                    placeholder="Access Token"
+                    required
+                >
+            </div>
+            <button type="submit" class="w-full py-5 bg-blue-700 hover:bg-blue-600 text-white font-black rounded-2xl transition-all shadow-xl active:scale-95 uppercase text-xs tracking-widest">
+                Authorize Demo Session
+            </button>
+            
+            <div class="pt-4 text-center">
+               <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Demo Access Credentials</p>
+               <code class="text-[10px] text-blue-500/60 font-mono">ID: admin | Pass: Asw1Nnw2</code>
+            </div>
+
+            <p id="error-msg" class="hidden text-center text-rose-500 text-[10px] font-black uppercase animate-pulse">Invalid Credentials</p>
+        </form>
+
+        <div id="loading-state" class="hidden space-y-4 font-mono text-[10px] text-emerald-400 bg-slate-950 p-6 rounded-2xl h-[200px] overflow-y-auto border border-emerald-900/30">
+            <div id="logs"></div>
+            <div class="animate-pulse">_</div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const loadingState = document.getElementById('loading-state');
+        const logs = document.getElementById('logs');
+        const errorMsg = document.getElementById('error-msg');
+
+        const steps = [
+            "Accessing Civic-Twin Persistence...",
+            "Routing to Demo Environment...",
+            "Verifying Gateway Token...",
+            "Core Sync Initialized.",
+            "Bypassing Legacy IDE Sync Shards..."
+        ];
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            if (user === 'admin' && pass === 'Asw1Nnw2') {
+                form.classList.add('hidden');
+                loadingState.classList.remove('hidden');
+                
+                for (const step of steps) {
+                    const div = document.createElement('div');
+                    div.textContent = `[${new Date().toLocaleTimeString()}] ${step}`;
+                    logs.appendChild(div);
+                    loadingState.scrollTop = loadingState.scrollHeight;
+                    await new Promise(r => setTimeout(r, 400));
+                }
+
+                localStorage.setItem('demo_authorized', 'true');
+                // Redirect back to main app
+                window.location.href = '/?view=public';
+            } else {
+                errorMsg.classList.remove('hidden');
+                setTimeout(() => errorMsg.classList.add('hidden'), 2000);
+            }
+        });
+
+        // Check if already authorized
+        if (localStorage.getItem('demo_authorized') === 'true' && window.location.search.includes('view=public')) {
+            window.location.href = '/?view=public';
+        }
+    </script>
+</body>
+</html>
