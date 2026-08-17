@@ -1,0 +1,291 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Globe, Calendar, FileText, AlertCircle, Search, Layers, Clock, ArrowRight, CheckCircle2 } from 'lucide-react';
+import Markdown from 'react-markdown';
+import { TwinMetadata } from '../types';
+import { generatePlanetAiReport } from '../services/geminiService';
+
+interface Planet4DPanelProps {
+  metadata: TwinMetadata;
+  onUpdateMetadata: (metadata: TwinMetadata) => void;
+}
+
+export const Planet4DPanel: React.FC<Planet4DPanelProps> = ({ metadata, onUpdateMetadata }) => {
+  const [activeTab, setActiveTab] = useState<'order' | '4d' | 'report'>('order');
+  const [isOrdering, setIsOrdering] = useState(false);
+  const [orderStatus, setOrderStatus] = useState<'none' | 'pending' | 'completed'>(metadata.planetOrderId ? 'completed' : 'none');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [report, setReport] = useState<string | null>(metadata.planetAiReport || null);
+  const [dateRange, setDateRange] = useState('Last 30 Days');
+  const [searchAddress, setSearchAddress] = useState(metadata.address);
+
+  const handleOrder = async () => {
+    setIsOrdering(true);
+    // Mock Planet API order generation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const mockOrderId = `PL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    
+    try {
+      await fetch('/api/planet-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metadata, orderId: mockOrderId })
+      });
+      
+      const sqlLine = `INSERT INTO planet_orders (order_id, address, lat, lng, timestamp) VALUES ('${mockOrderId}', '${metadata.address}', ${metadata.location?.lat}, ${metadata.location?.lng}, '${new Date().toISOString()}');\n`;
+      
+      onUpdateMetadata({
+        ...metadata,
+        planetOrderId: mockOrderId,
+        planetOrdersSql: (metadata.planetOrdersSql || '') + sqlLine
+      });
+      setOrderStatus('pending');
+    } catch (err) {
+      console.error("Order API failed:", err);
+    } finally {
+      setIsOrdering(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      const result = await generatePlanetAiReport(metadata, dateRange);
+      setReport(result);
+      onUpdateMetadata({
+        ...metadata,
+        planetAiReport: result
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col bg-slate-950 text-slate-200 overflow-hidden">
+      <header className="p-8 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-900/20">
+            <Globe className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-white tracking-tight">PlanetScope 4D Intelligence</h2>
+            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Angel Shark Civic Twin | Daily Satellite Integration</p>
+          </div>
+        </div>
+
+        <nav className="flex bg-slate-900 p-1 rounded-2xl border border-slate-800">
+          {[
+            { id: 'order', label: 'Order Scope', icon: Search },
+            { id: '4d', label: '4D Time Window', icon: Clock },
+            { id: 'report', label: 'AI Analysis', icon: FileText }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-8 lg:p-12 scrollbar-thin scrollbar-thumb-slate-800 relative">
+        <AnimatePresence mode="wait">
+          {activeTab === 'order' && (
+            <motion.div
+              key="order"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="max-w-4xl mx-auto space-y-10"
+            >
+              <div className="bg-indigo-900/10 border border-indigo-500/20 p-8 rounded-[2.5rem] space-y-6">
+                <div className="flex items-center gap-3 text-indigo-400">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="text-xs font-black uppercase tracking-widest">Planet Labs Integration Requirements</span>
+                </div>
+                <p className="text-sm text-slate-400 font-medium leading-relaxed">
+                  To generate a high-resolution PlanetScope order, verify your community's geographic shard. 
+                  This feature requires an active **Angel Shark Civic Twin Paid Account**.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <Search className="w-4 h-4 text-indigo-500" />
+                    Reverse Address Lookup
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={searchAddress}
+                        onChange={(e) => setSearchAddress(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-white outline-none focus:border-indigo-500 transition-all font-bold text-sm"
+                        placeholder="Enter Street Address..."
+                      />
+                      <Search className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    </div>
+                    <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl space-y-3">
+                      <div className="flex justify-between text-[10px] font-black uppercase text-slate-500">
+                        <span>Resolved Coordinates</span>
+                        <span className="text-indigo-400">Verified</span>
+                      </div>
+                      <p className="text-xs font-mono text-slate-300">
+                        LAT: {metadata.location?.lat.toFixed(6)} <br/>
+                        LNG: {metadata.location?.lng.toFixed(6)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-500" />
+                    Order Parameters
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-slate-500 uppercase">Product Type</span>
+                        <span className="text-[10px] font-black text-white uppercase bg-indigo-600 px-2 py-0.5 rounded">PlanetScope Daily</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-slate-500 uppercase">Resolution</span>
+                        <span className="text-[10px] font-black text-white uppercase">3.0 Meters</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-slate-500 uppercase">Account Tier</span>
+                        <span className="text-[10px] font-black text-amber-500 uppercase">Angel Shark Premium</span>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={handleOrder}
+                      disabled={isOrdering || orderStatus !== 'none'}
+                      className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl ${orderStatus === 'none' ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}
+                    >
+                      {isOrdering ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : orderStatus === 'none' ? (
+                        <>Generate PlanetScope Order <ArrowRight className="w-4 h-4" /></>
+                      ) : (
+                        <>Order Active: {metadata.planetOrderId}</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === '4d' && (
+            <motion.div
+              key="4d"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="h-full flex flex-col items-center justify-center text-center space-y-8"
+            >
+              <div className="w-24 h-24 bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-500 mb-4">
+                <Clock className="w-12 h-12 animate-pulse" />
+              </div>
+              <div className="space-y-4 max-w-md">
+                <h3 className="text-3xl font-black text-white tracking-tight">4D Temporal Analysis</h3>
+                <div className="p-8 bg-indigo-950/40 border border-indigo-500/30 rounded-[2.5rem] shadow-2xl">
+                  <p className="text-lg font-bold text-indigo-300 leading-relaxed">
+                    This is a <span className="text-white">paid feature</span>. 
+                  </p>
+                  <p className="text-sm text-indigo-400/80 mt-4 font-medium">
+                    Please allow <span className="text-white font-black">3 days</span> for your daily satellite photos to appear.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-6 w-full max-w-2xl mt-12">
+                {['T-Minus 72h', 'T-Minus 48h', 'T-Minus 24h'].map((time, i) => (
+                  <div key={i} className="p-6 bg-slate-900 border border-slate-800 rounded-2xl opacity-40 grayscale flex flex-col items-center gap-3">
+                    <Calendar className="w-6 h-6 text-slate-500" />
+                    <span className="text-[10px] font-black uppercase text-slate-600">{time}</span>
+                    <div className="w-full h-24 bg-slate-950 rounded-lg flex items-center justify-center text-[9px] font-black text-slate-800 uppercase">Pending Sync</div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'report' && (
+            <motion.div
+              key="report"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="max-w-4xl mx-auto space-y-10"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-black text-white tracking-tight">AI Intelligence Report</h3>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Derived from PlanetScope Daily Imagery</p>
+                </div>
+                <button 
+                  onClick={handleGenerateReport}
+                  disabled={isGeneratingReport || !metadata.planetOrderId}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-xl flex items-center gap-2"
+                >
+                  {isGeneratingReport ? 'Analyzing Shards...' : 'Regenerate Report'}
+                </button>
+              </div>
+
+              {!metadata.planetOrderId ? (
+                <div className="p-20 bg-slate-900 border border-slate-800 rounded-[3rem] text-center space-y-6">
+                  <FileText className="w-16 h-16 text-slate-700 mx-auto" />
+                  <p className="text-slate-500 font-bold italic">No active PlanetScope order found. Generate an order to enable AI analysis.</p>
+                </div>
+              ) : isGeneratingReport ? (
+                <div className="p-20 bg-slate-900 border border-slate-800 rounded-[3rem] flex flex-col items-center justify-center space-y-6">
+                  <div className="w-12 h-12 border-4 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
+                  <p className="text-indigo-400 font-black uppercase text-xs tracking-widest animate-pulse">Processing Satellite Shards...</p>
+                </div>
+              ) : report ? (
+                <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 lg:p-16 shadow-2xl relative">
+                  <div className="absolute top-8 right-8">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 opacity-50" />
+                  </div>
+                  <div className="prose prose-invert prose-slate max-w-none">
+                    <Markdown>{report}</Markdown>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-20 bg-slate-900 border border-slate-800 rounded-[3rem] text-center space-y-6">
+                  <button 
+                    onClick={handleGenerateReport}
+                    className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-2xl"
+                  >
+                    Generate Initial AI Report
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Global Order Button at Bottom Left */}
+        <div className="absolute bottom-8 left-8 z-50">
+          <button 
+            onClick={handleOrder}
+            disabled={isOrdering}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-[9px] uppercase tracking-widest transition-all shadow-2xl flex items-center gap-2 border border-blue-400/30"
+          >
+            {isOrdering ? 'Processing...' : 'Generate PlanetScope Order send it as an email to billing@angelsharks.net'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
