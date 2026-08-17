@@ -31,7 +31,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewCha
   const status = getStatusDisplay();
   
   // CORRECTED REPOSITORY URL FOR ANGEL SHARKS
-  const REPO_URL = "https://github.com/ADD12/Civic-Twin-by-Angel-Sharks";
+  const REPO_URL = "https://github.com/AngelSharks/Civic-Twin";
   const ORG_NAME = "Angel Sharks";
 
   return (
