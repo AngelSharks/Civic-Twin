@@ -1,0 +1,231 @@
+/**
+ * Civic_Twin Santa Barbara Demo Plugin Admin Styles (PHP 8.2+)
+ */
+
+.civic-twin-admin-wrap {
+    margin: 20px 20px 0 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.ct-admin-header {
+    background: #0f172a; /* Slate 900 */
+    color: #f8fafc;
+    padding: 30px;
+    border-radius: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+}
+
+.ct-branding {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.ct-icon-shield {
+    font-size: 2.8rem;
+    background: rgba(2, 132, 199, 0.2);
+    border: 1px solid rgba(2, 132, 199, 0.4);
+    padding: 12px;
+    border-radius: 1.2rem;
+    line-height: 1;
+}
+
+.ct-branding h1 {
+    color: #f8fafc !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    margin: 0 0 4px 0 !important;
+    padding: 0 !important;
+}
+
+.ct-subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.ct-badge-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.ct-version-tag {
+    background: #059669; /* Emerald 600 */
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    letter-spacing: 0.05em;
+}
+
+.ct-sb-banner {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    padding: 16px 24px;
+    border-radius: 1.2rem;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.ct-sb-badge {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.2);
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.ct-sb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    font-size: 12px;
+    color: #e0f2fe;
+}
+
+.ct-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+@media (max-width: 960px) {
+    .ct-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ct-card {
+    background: #ffffff;
+    border-radius: 1.2rem;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.ct-card h2, .ct-card h3 {
+    margin-top: 0;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.card-desc {
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+.ct-form-row {
+    margin-bottom: 18px;
+}
+
+.ct-form-row label {
+    display: block;
+    font-weight: 700;
+    font-size: 13px;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.ct-form-row input[type="text"],
+.ct-form-row input[type="url"],
+.ct-form-row input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+}
+
+.ct-form-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.ct-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ct-sidebar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.status-indicator-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 14px;
+}
+
+.ct-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.ct-indicator.online { background: #10b981; box-shadow: 0 0 10px #10b981; }
+.ct-indicator.offline { background: #ef4444; }
+.ct-indicator.connecting { background: #f59e0b; }
+
+.diagnostics-logs {
+    background: #0f172a;
+    color: #38bdf8;
+    font-family: monospace;
+    font-size: 11px;
+    padding: 12px;
+    border-radius: 10px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.shortcode-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.shortcode-list li {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.shortcode-list code {
+    background: #f1f5f9;
+    color: #0284c7;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.shortcode-list .tip {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+}

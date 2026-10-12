@@ -21,7 +21,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onReset }) =
     utilities: '',
     infrastructure: '',
     safety: '',
-    greenery: ''
+    greenery: '',
+    watershed: ''
   });
   const [cids, setCids] = useState<CID[]>([]);
   const [newCidName, setNewCidName] = useState('');
@@ -155,6 +156,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onReset }) =
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
                 { key: 'parcels', label: 'Parcel Boundaries' },
+                { key: 'watershed', label: 'Watershed & Basin Boundaries' },
                 { key: 'utilities', label: 'Underground Utilities' },
                 { key: 'greenery', label: 'Public Green Space' },
                 { key: 'infrastructure', label: 'General Infrastructure' },
@@ -257,6 +259,30 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onReset }) =
           <p className="text-xs sm:text-sm text-slate-700 font-medium">Calibrate your physical region for spatial simulation.</p>
         </div>
         <form onSubmit={handleStep1Submit} className="p-6 sm:p-8 space-y-5 sm:space-y-6">
+          <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-2xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🌊</span>
+              <div>
+                <p className="text-[11px] font-black text-sky-900 leading-none">City of Santa Barbara, CA Demo</p>
+                <p className="text-[9px] text-sky-700 font-bold">santabarbaraca.gov • Pre-calibrated GIS centroid</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({
+                  name: 'City of Santa Barbara, CA',
+                  address: '735 Anacapa Street, Santa Barbara, CA 93101',
+                  type: 'City',
+                  officialUrl: 'https://santabarbaraca.gov/'
+                });
+              }}
+              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
+            >
+              Load Preset
+            </button>
+          </div>
+
           <div className="space-y-2">
              <label className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Community Identity</label>
             <input

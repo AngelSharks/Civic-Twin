@@ -58,6 +58,15 @@ export interface GISLayerEndpoints {
   infrastructure: string;
   safety: string;
   greenery: string;
+  watershed?: string;
+}
+
+export interface HydrologySimState {
+  rainfallIntensity: number; // mm/hr
+  soilPermeability: number; // percentage
+  retentionBasinCapacity: number; // percentage
+  projectedRunoff: number; // m3/s
+  floodRiskLevel: 'LOW' | 'MODERATE' | 'ELEVATED' | 'CRITICAL';
 }
 
 export interface Feedback {
@@ -148,11 +157,50 @@ export interface InferenceTask {
   worker_id?: string;
 }
 
-export type ViewType = 'dashboard' | 'gis-analysis' | 'admin' | 'documentation' | 'mesh-gateway' | 'planet-4d';
+export type ViewType = 'dashboard' | 'gis-analysis' | 'admin' | 'documentation' | 'mesh-gateway' | 'planet-4d' | 'civil3d-proposal';
 export type ConnectivityStatus = 'online' | 'offline-fog' | 'disconnected';
 
 export interface TrafficSimState {
   publicTransportAvailability: number;
   trafficDensity: number;
   peakHourDelay: number;
+}
+
+export interface SolarCanopyConfig {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  lengthFt: number;
+  widthFt: number;
+  stallsCovered: number;
+  tiltAngle: number; // degrees 5 - 35
+  azimuthDeg: number; // 0 - 360 (180 = South)
+  panelEfficiency: number; // e.g. 0.218 (21.8%)
+  moduleWattage: number; // e.g. 550W
+  structureType: 'dual-cantilever' | 'single-slope-y' | 'long-span-truss';
+  evChargersCount: number; // Level 2 & DC Fast
+  bessCapacityKWh: number; // Battery storage
+  rotationDeg?: number; // 0 - 360 degrees alignment with parking stalls/drive aisles
+}
+
+export interface PropertyDetailLayer {
+  id: string;
+  propertyName: string;
+  apn: string; // Assessor Parcel Number
+  lotSqFt: number;
+  buildingType: string;
+  annualBaselineKwh: number;
+  peakKwDemand: number;
+  canopies: SolarCanopyConfig[];
+  projectedAnnualKwh: number;
+  selfSufficiencyPct: number;
+  bessKWh: number;
+  microgridIslandingHours: number;
+  co2OffsetTons: number;
+  stormwaterCapturedGalYr: number;
+  structuralSteelTons: number;
+  civil3DExported: boolean;
+  status: 'draft' | 'simulated' | 'proposed' | 'committed';
+  createdAt: string;
 }

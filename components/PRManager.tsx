@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { TwinMetadata, SmartCityInsight } from '../types';
-import { createGitHubPR } from '../services/githubService';
+import { createGitHubPR, DEFAULT_GITHUB_TOKEN } from '../services/githubService';
 
 interface PRManagerProps {
   metadata: TwinMetadata;
@@ -28,7 +28,11 @@ export const PRManager: React.FC<PRManagerProps> = ({ metadata, insights, prCont
   };
 
   const handleSubmitPR = async () => {
-    const token = metadata?.githubToken;
+    const rawToken = metadata?.githubToken;
+    const token = rawToken && !rawToken.includes('github_pat_YOUR_TOKEN_HERE') && rawToken.trim() !== 'github_pat_'
+      ? rawToken
+      : (import.meta.env.VITE_GITHUB_TOKEN || DEFAULT_GITHUB_TOKEN);
+
     if (!prContent || !token || token.includes('github_pat_YOUR_TOKEN_HERE') || token.trim() === 'github_pat_') {
       setSubmitStatus('error');
       setErrorMessage("Valid GitHub Personal Access Token (PAT) required. Add it in Admin Settings.");
@@ -71,16 +75,32 @@ export const PRManager: React.FC<PRManagerProps> = ({ metadata, insights, prCont
               🚀
             </div>
             <div>
-              <h2 className="text-xl font-black text-white tracking-tight">Pull Request Architect</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Staging to {REPO_NAME}</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-black text-white tracking-tight">Daily GitHub Backup & Version Control</h2>
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-slate-800 text-blue-400 border border-slate-700">
+                  {metadata?.version || 'v2'}
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Target: {REPO_NAME} (main branch)</p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-3">
+            <a 
+              href={`https://github.com/${REPO_NAME}/archive/refs/heads/main.zip`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors border border-slate-700"
+              title="Download latest main branch ZIP from GitHub"
+            >
+              <span>📥</span> Download Latest ZIP
+            </a>
+            <button 
+              onClick={onClose}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-8 lg:p-10 space-y-8 custom-scrollbar">
@@ -234,7 +254,7 @@ export const PRManager: React.FC<PRManagerProps> = ({ metadata, insights, prCont
               ) : submitStatus === 'error' ? (
                 '❌ Retry Submission'
               ) : (
-                '🚀 Submit Pull Request'
+                '🚀 Stage & Submit Daily Backup PR'
               )}
             </button>
           ) : (

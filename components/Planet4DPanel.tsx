@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Globe, Calendar, FileText, AlertCircle, Search, Layers, Clock, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Globe, Calendar, FileText, AlertCircle, Search, Layers, Clock, ArrowRight, CheckCircle2, MapPin, RefreshCw, Check } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { TwinMetadata } from '../types';
 import { generatePlanetAiReport } from '../services/geminiService';
@@ -17,7 +17,122 @@ export const Planet4DPanel: React.FC<Planet4DPanelProps> = ({ metadata, onUpdate
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [report, setReport] = useState<string | null>(metadata.planetAiReport || null);
   const [dateRange, setDateRange] = useState('Last 30 Days');
-  const [searchAddress, setSearchAddress] = useState(metadata.address);
+  
+  // Geocoding & Reverse Lookup State
+  const [searchAddress, setSearchAddress] = useState(metadata.address || '');
+  const [resolvedLocation, setResolvedLocation] = useState<{ lat: number; lng: number; displayName: string } | null>(
+    metadata.location ? { lat: metadata.location.lat, lng: metadata.location.lng, displayName: metadata.location.displayName || metadata.address } : null
+  );
+  const [inputLat, setInputLat] = useState<string>(metadata.location?.lat ? metadata.location.lat.toString() : '');
+  const [inputLng, setInputLng] = useState<string>(metadata.location?.lng ? metadata.location.lng.toString() : '');
+  const [lookupMode, setLookupMode] = useState<'address' | 'coordinates'>('address');
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupMessage, setLookupMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isSavedToTwin, setIsSavedToTwin] = useState(false);
+
+  // Sync state if metadata changes externally
+  useEffect(() => {
+    if (metadata.address && !searchAddress) {
+      setSearchAddress(metadata.address);
+    }
+    if (metadata.location) {
+      setResolvedLocation({
+        lat: metadata.location.lat,
+        lng: metadata.location.lng,
+        displayName: metadata.location.displayName || metadata.address
+      });
+      setInputLat(metadata.location.lat.toString());
+      setInputLng(metadata.location.lng.toString());
+    }
+  }, [metadata]);
+
+  // Forward Address Lookup
+  const handleAddressLookup = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!searchAddress.trim() || isLookingUp) return;
+
+    setIsLookingUp(true);
+    setLookupMessage(null);
+    setIsSavedToTwin(false);
+
+    try {
+      const encoded = encodeURIComponent(searchAddress.trim());
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1&addressdetails=1`);
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const item = data[0];
+        const newLat = parseFloat(item.lat);
+        const newLng = parseFloat(item.lon);
+        const newDisplayName = item.display_name;
+
+        const loc = { lat: newLat, lng: newLng, displayName: newDisplayName };
+        setResolvedLocation(loc);
+        setInputLat(newLat.toFixed(6));
+        setInputLng(newLng.toFixed(6));
+
+        // Automatically update the Civic Twin metadata
+        onUpdateMetadata({
+          ...metadata,
+          address: searchAddress.trim(),
+          location: loc
+        });
+
+        setLookupMessage({ type: 'success', text: `Resolved: ${newDisplayName}` });
+        setIsSavedToTwin(true);
+      } else {
+        setLookupMessage({ type: 'error', text: 'No matching location found. Try adding a city or postal code.' });
+      }
+    } catch (err) {
+      console.error('Address lookup failed:', err);
+      setLookupMessage({ type: 'error', text: 'Lookup error. Check network connection.' });
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
+  // Reverse Coordinates Lookup (Lat/Lng -> Address)
+  const handleCoordinatesReverseLookup = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const lat = parseFloat(inputLat);
+    const lng = parseFloat(inputLng);
+
+    if (isNaN(lat) || isNaN(lng) || isLookingUp) {
+      setLookupMessage({ type: 'error', text: 'Please enter valid numerical Latitude and Longitude values.' });
+      return;
+    }
+
+    setIsLookingUp(true);
+    setLookupMessage(null);
+    setIsSavedToTwin(false);
+
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+      const data = await response.json();
+
+      if (data && data.display_name) {
+        const loc = { lat, lng, displayName: data.display_name };
+        setResolvedLocation(loc);
+        setSearchAddress(data.display_name);
+
+        onUpdateMetadata({
+          ...metadata,
+          address: data.display_name,
+          location: loc
+        });
+
+        setLookupMessage({ type: 'success', text: `Reverse resolved: ${data.display_name}` });
+        setIsSavedToTwin(true);
+      } else {
+        setLookupMessage({ type: 'error', text: 'No address resolved for these coordinates.' });
+      }
+    } catch (err) {
+      console.error('Reverse lookup failed:', err);
+      setLookupMessage({ type: 'error', text: 'Reverse geocode error. Check network connection.' });
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
 
   const handleOrder = async () => {
     setIsOrdering(true);
@@ -32,10 +147,16 @@ export const Planet4DPanel: React.FC<Planet4DPanelProps> = ({ metadata, onUpdate
         body: JSON.stringify({ metadata, orderId: mockOrderId })
       });
       
-      const sqlLine = `INSERT INTO planet_orders (order_id, address, lat, lng, timestamp) VALUES ('${mockOrderId}', '${metadata.address}', ${metadata.location?.lat}, ${metadata.location?.lng}, '${new Date().toISOString()}');\n`;
+      const currentLat = resolvedLocation?.lat || metadata.location?.lat || 0;
+      const currentLng = resolvedLocation?.lng || metadata.location?.lng || 0;
+      const currentAddr = searchAddress || metadata.address;
+
+      const sqlLine = `INSERT INTO planet_orders (order_id, address, lat, lng, timestamp) VALUES ('${mockOrderId}', '${currentAddr}', ${currentLat}, ${currentLng}, '${new Date().toISOString()}');\n`;
       
       onUpdateMetadata({
         ...metadata,
+        address: currentAddr,
+        location: resolvedLocation || metadata.location,
         planetOrderId: mockOrderId,
         planetOrdersSql: (metadata.planetOrdersSql || '') + sqlLine
       });
@@ -117,30 +238,144 @@ export const Planet4DPanel: React.FC<Planet4DPanelProps> = ({ metadata, onUpdate
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                    <Search className="w-4 h-4 text-indigo-500" />
-                    Reverse Address Lookup
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        value={searchAddress}
-                        onChange={(e) => setSearchAddress(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-white outline-none focus:border-indigo-500 transition-all font-bold text-sm"
-                        placeholder="Enter Street Address..."
-                      />
-                      <Search className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-indigo-500" />
+                      Geographic Shard & Lookup
+                    </h3>
+                    <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[9px] font-black uppercase">
+                      <button
+                        type="button"
+                        onClick={() => { setLookupMode('address'); setLookupMessage(null); }}
+                        className={`px-2.5 py-1 rounded-md transition-all ${lookupMode === 'address' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        Address
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setLookupMode('coordinates'); setLookupMessage(null); }}
+                        className={`px-2.5 py-1 rounded-md transition-all ${lookupMode === 'coordinates' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        Lat / Lng
+                      </button>
                     </div>
-                    <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl space-y-3">
-                      <div className="flex justify-between text-[10px] font-black uppercase text-slate-500">
-                        <span>Resolved Coordinates</span>
-                        <span className="text-indigo-400">Verified</span>
+                  </div>
+
+                  {lookupMode === 'address' ? (
+                    <form onSubmit={handleAddressLookup} className="space-y-4">
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          value={searchAddress}
+                          onChange={(e) => {
+                            setSearchAddress(e.target.value);
+                            setIsSavedToTwin(false);
+                          }}
+                          className="w-full px-5 py-3.5 bg-slate-900 border border-slate-800 rounded-2xl text-white outline-none focus:border-indigo-500 transition-all font-bold text-sm pr-24"
+                          placeholder="Type city, street, or landmark..."
+                        />
+                        <button
+                          type="submit"
+                          disabled={isLookingUp || !searchAddress.trim()}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all"
+                        >
+                          {isLookingUp ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <>
+                              <Search className="w-3 h-3" />
+                              <span>Lookup</span>
+                            </>
+                          )}
+                        </button>
                       </div>
-                      <p className="text-xs font-mono text-slate-300">
-                        LAT: {metadata.location?.lat.toFixed(6)} <br/>
-                        LNG: {metadata.location?.lng.toFixed(6)}
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Enter any municipality address or location to resolve coordinates and satellite bounding box.
                       </p>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleCoordinatesReverseLookup} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider block mb-1">Latitude</label>
+                          <input 
+                            type="text" 
+                            value={inputLat}
+                            onChange={(e) => { setInputLat(e.target.value); setIsSavedToTwin(false); }}
+                            className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white outline-none focus:border-indigo-500 font-mono text-xs"
+                            placeholder="e.g. 43.083100"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider block mb-1">Longitude</label>
+                          <input 
+                            type="text" 
+                            value={inputLng}
+                            onChange={(e) => { setInputLng(e.target.value); setIsSavedToTwin(false); }}
+                            className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white outline-none focus:border-indigo-500 font-mono text-xs"
+                            placeholder="e.g. -73.784600"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isLookingUp || !inputLat || !inputLng}
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg"
+                      >
+                        {isLookingUp ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <Search className="w-3 h-3" />
+                            <span>Reverse Lookup Address</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Feedback Message */}
+                  {lookupMessage && (
+                    <div className={`p-4 rounded-xl text-xs font-bold flex items-start gap-2 ${
+                      lookupMessage.type === 'success' 
+                        ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300' 
+                        : 'bg-rose-950/40 border border-rose-500/30 text-rose-300'
+                    }`}>
+                      {lookupMessage.type === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      )}
+                      <span className="leading-tight">{lookupMessage.text}</span>
+                    </div>
+                  )}
+
+                  {/* Live Resolved Details Card */}
+                  <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl space-y-4">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                      <span>Resolved Spatial Coordinates</span>
+                      {resolvedLocation ? (
+                        <span className="text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+                          <Check className="w-3 h-3" /> Synced
+                        </span>
+                      ) : (
+                        <span className="text-amber-400">Pending</span>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-slate-200 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                        <span className="text-slate-500 font-sans font-bold block text-[10px] uppercase mb-1">Coordinates (WGS84):</span>
+                        LAT: <span className="text-indigo-400 font-bold">{resolvedLocation?.lat.toFixed(6) ?? (metadata.location?.lat ? metadata.location.lat.toFixed(6) : 'N/A')}</span> <br/>
+                        LNG: <span className="text-indigo-400 font-bold">{resolvedLocation?.lng.toFixed(6) ?? (metadata.location?.lng ? metadata.location.lng.toFixed(6) : 'N/A')}</span>
+                      </p>
+                      
+                      {resolvedLocation?.displayName && (
+                        <p className="text-[11px] text-slate-400 bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 leading-relaxed">
+                          <span className="text-slate-500 font-bold block text-[9px] uppercase mb-0.5">Matched Shard Address:</span>
+                          {resolvedLocation.displayName}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

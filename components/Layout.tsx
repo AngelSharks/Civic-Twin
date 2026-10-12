@@ -13,6 +13,31 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange, isMetadataSet, connectivity, onReset }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPlugin = async () => {
+    setIsDownloading(true);
+    try {
+      const res = await fetch('/api/download/Civic_Twin_Angel_Sharks_ap.V.07.zip');
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Civic_Twin_Angel_Sharks_ap.V.07.zip';
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      }, 1000);
+    } catch (err) {
+      console.warn("Direct blob download failed, falling back to direct navigation", err);
+      window.location.href = '/api/download/Civic_Twin_Angel_Sharks_ap.V.07.zip';
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Detect if we are in "Public View" (Production Mode + Not in Admin)
   const isPublicView = window.location.search.includes('view=public');
@@ -76,6 +101,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewCha
                 GIS Analysis
               </button>
               <button 
+                onClick={() => onViewChange('civil3d-proposal')}
+                disabled={!isMetadataSet}
+                className={`transition-colors py-2 flex items-center gap-1.5 disabled:opacity-30 font-black ${currentView === 'civil3d-proposal' ? 'text-amber-500' : 'text-slate-600 hover:text-amber-500'}`}
+                title="Autodesk Civil 3D Solar Canopy Carport & 100% Self-Sufficiency Studio"
+              >
+                <span>☀️</span> Civil 3D &amp; Solar
+              </button>
+              <button 
                 onClick={() => onViewChange('planet-4d')}
                 disabled={!isMetadataSet}
                 className={`transition-colors py-2 flex items-center gap-1.5 disabled:opacity-30 ${currentView === 'planet-4d' ? 'text-indigo-700 font-black' : 'hover:text-indigo-600'}`}
@@ -109,6 +142,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewCha
               </button>
               
               <div className="h-6 w-px bg-slate-300 mx-2"></div>
+              <button
+                onClick={handleDownloadPlugin}
+                disabled={isDownloading}
+                className="flex items-center gap-2 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 transition-all rounded-lg text-xs font-black text-white shadow-lg shadow-sky-600/20 active:scale-95 disabled:opacity-50"
+                title="Download Civic_Twin_Angel_Sharks_ap.V.07.zip for WordPress"
+              >
+                <span>🌊</span>
+                {isDownloading ? 'DOWNLOADING...' : 'DOWNLOAD V.07 ZIP'}
+              </button>
+
               <a 
                 href={REPO_URL} 
                 target="_blank" 
@@ -128,13 +171,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewCha
         </nav>
 
         <div className="flex items-center gap-4">
-          {/* Always show Log Off for non-public views to allow reset, or if metadata is set */}
+          {/* Always show Reset / New City for easy onboarding */}
           {(isMetadataSet || !window.location.search.includes('view=public')) && (
             <button 
               onClick={onReset}
               className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-rose-600 hover:bg-rose-500 border border-rose-500 rounded-xl text-[9px] sm:text-[10px] font-black text-white uppercase tracking-widest transition-all shadow-lg shadow-rose-900/20 active:scale-95"
+              title="Reset application and onboard a new city"
             >
-              <span className="hidden xs:inline">🚀</span> RESTART / LOG OFF
+              <span className="hidden xs:inline">🔄</span> RESET / NEW CITY
             </button>
           )}
         </div>
@@ -171,17 +215,30 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewCha
               GIS Analysis
             </button>
             <button 
+              onClick={() => { onViewChange('civil3d-proposal'); setIsMenuOpen(false); }}
+              disabled={!isMetadataSet}
+              className={`text-xl font-black text-left border-b border-slate-100 pb-4 flex items-center gap-2 ${currentView === 'civil3d-proposal' ? 'text-amber-600' : 'text-slate-900'}`}
+            >
+              <span>☀️</span> Civil 3D &amp; Solar Canopies
+            </button>
+            <button 
               onClick={() => { onViewChange('admin'); setIsMenuOpen(false); }}
               className={`text-xl font-black text-left border-b border-slate-100 pb-4 ${currentView === 'admin' ? 'text-slate-900' : 'text-slate-900'}`}
             >
               ⚙️ Admin
             </button>
+            <button 
+              onClick={() => { handleDownloadPlugin(); setIsMenuOpen(false); }}
+              className="text-lg font-black text-left border-b border-slate-100 pb-4 text-sky-600 flex items-center gap-2"
+            >
+              <span>🌊</span> Download V.07 Plugin (.zip)
+            </button>
             {isMetadataSet && (
               <button 
                 onClick={() => { onReset(); setIsMenuOpen(false); }}
-                className="text-xl font-black text-left border-b border-slate-100 pb-4 text-rose-600"
+                className="text-xl font-black text-left border-b border-slate-100 pb-4 text-rose-600 flex items-center gap-2"
               >
-                Log Off / Restart
+                <span>🔄</span> Reset / Onboard New City
               </button>
             )}
             <div className="mt-auto flex flex-col items-center gap-1">

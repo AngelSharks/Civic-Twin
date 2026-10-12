@@ -9,9 +9,11 @@ import { CIDLogin } from './components/CIDLogin';
 import { DemoLogin } from './components/DemoLogin';
 import { TwinMetadata, SmartCityInsight, ViewType, ConnectivityStatus, CIDUser } from './types';
 import { generateDigitalTwinInsights } from './services/geminiService';
+import { DEFAULT_GITHUB_TOKEN } from './services/githubService';
 
 // Lazy load heavy components
 const GISAnalysis = lazy(() => import('./components/GISAnalysis').then(m => ({ default: m.GISAnalysis })));
+const Civil3DSolarProposal = lazy(() => import('./components/Civil3DSolarProposal').then(m => ({ default: m.Civil3DSolarProposal })));
 const AdminSettings = lazy(() => import('./components/AdminSettings').then(m => ({ default: m.AdminSettings })));
 const Documentation = lazy(() => import('./components/Documentation').then(m => ({ default: m.Documentation })));
 const Planet4DPanel = lazy(() => import('./components/Planet4DPanel').then(m => ({ default: m.Planet4DPanel })));
@@ -82,7 +84,8 @@ const App: React.FC = () => {
       try {
         const { metadata: savedMetadata, insights: savedInsights, view: savedView, user: savedUser } = JSON.parse(saved);
         if (savedMetadata && !metadata) {
-          const hydratedMetadata = { ...savedMetadata, version: savedMetadata.version || 'v4' };
+          const activeToken = savedMetadata.githubToken || import.meta.env.VITE_GITHUB_TOKEN || '';
+          const hydratedMetadata = { ...savedMetadata, githubToken: activeToken, version: savedMetadata.version || '0.7.0' };
           setMetadata(hydratedMetadata);
         }
         if (savedInsights && insights.length === 0) setInsights(savedInsights);
@@ -103,6 +106,7 @@ const App: React.FC = () => {
           { id: '772', name: `Saratoga Central CID`, population: 1200, meshActive: true },
           { id: '104', name: `Saratoga Highlands CID`, population: 850, meshActive: true }
         ],
+        githubToken: import.meta.env.VITE_GITHUB_TOKEN || DEFAULT_GITHUB_TOKEN,
         isEmergencyMode: false,
         version: "v4"
       };
@@ -148,25 +152,32 @@ const App: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (window.confirm("Are you sure you want to log off? This will reset the application and clear all local community data.")) {
-      // 1. Clear ALL storage to ensure no stale data persists
+    // 1. Clear ALL storage immediately
+    try {
       window.localStorage.clear();
       window.sessionStorage.clear();
       localStorage.removeItem('demo_authorized');
-      
-      // 2. Clear all state explicitly
-      setMetadata(null);
-      setInsights([]);
-      setUser(null);
-      setIsDemoAuthorized(false);
-      
-      // 3. Force a hard redirect to a clean URL with cache-busting
-      const isPublic = window.location.search.includes('view=public');
-      const baseUrl = window.location.origin + window.location.pathname;
-      const cleanUrl = isPublic ? `${baseUrl}?view=public` : baseUrl;
-      const finalUrl = `${cleanUrl}${cleanUrl.includes('?') ? '&' : '?'}nocache=${Date.now()}`;
-      
-      window.location.href = finalUrl;
+      localStorage.removeItem('civic_twin_persistence');
+      localStorage.removeItem('blan_isolated');
+    } catch (e) {
+      console.warn("Storage clear notice:", e);
+    }
+    
+    // 2. Clear all React state directly so UI switches to Onboarding instantly
+    setMetadata(null);
+    setInsights([]);
+    setUser(null);
+    setIsDemoAuthorized(false);
+    setCurrentView('dashboard');
+
+    // 3. Clean up URL parameters safely without forcing a breaking iframe redirect
+    try {
+      if (window.location.search) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch (e) {
+      console.warn("History state clean notice:", e);
     }
   };
 
@@ -184,7 +195,7 @@ const App: React.FC = () => {
       <Suspense fallback={<LoadingFallback />}>
         {(() => {
           if (currentView === 'documentation') return <Documentation />;
-          if (currentView === 'admin') return <AdminSettings metadata={metadata} onUpdateMetadata={setMetadata} />;
+          if (currentView === 'admin') return <AdminSettings metadata={metadata} onUpdateMetadata={setMetadata} onReset={handleReset} />;
           
           if (!metadata) return <Onboarding onComplete={handleOnboardingComplete} onReset={handleReset} />;
 
@@ -208,6 +219,8 @@ const App: React.FC = () => {
               );
             case 'gis-analysis':
               return <GISAnalysis metadata={metadata} connectivity={connectivity} />;
+            case 'civil3d-proposal':
+              return <Civil3DSolarProposal metadata={metadata} />;
             case 'planet-4d':
               return <Planet4DPanel metadata={metadata} onUpdateMetadata={setMetadata} />;
             default:

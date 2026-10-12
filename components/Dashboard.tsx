@@ -135,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ metadata, insights, isLoad
                 onClick={handleStagePR}
                 className="w-full py-3 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
               >
-                <span>📦</span> Stage Civic Twin PR
+                <span>📦</span> Daily Backup / Stage PR
               </button>
 
               <a 
@@ -144,7 +144,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ metadata, insights, isLoad
                 rel="noopener noreferrer"
                 className="w-full py-3 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
               >
-                <span>📥</span> Download Source ZIP
+                <span>📥</span> Download Latest Main (ZIP)
               </a>
 
               <a 

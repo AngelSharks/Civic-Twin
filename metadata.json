@@ -1,8 +1,11 @@
 {
   "name": "Civic Twin | Angel Sharks",
-  "description": "Official Digital Twin platform for the Angel Sharks Organization, integrating NIST Smart City frameworks with GitHub persistence on Civic-Twin.",
+  "description": "Official Digital Twin platform for the Angel Sharks Organization, integrating NIST Smart City frameworks with GIS Watershed Boundaries and GitHub persistence on Civic-Twin.",
   "requestFramePermissions": [
     "geolocation",
     "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
 }

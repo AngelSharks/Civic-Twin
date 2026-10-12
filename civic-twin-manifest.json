@@ -1,0 +1,41 @@
+{
+  "project": "Civic Twin | Angel Sharks",
+  "repository": "AngelSharks/Civic-Twin",
+  "branch": "main",
+  "githubUrl": "https://github.com/AngelSharks/Civic-Twin",
+  "latestArchiveUrl": "https://github.com/AngelSharks/Civic-Twin/archive/refs/heads/main.zip",
+  "organization": {
+    "owner": "Add11",
+    "collaborator": "Add12",
+    "org": "AngelSharks"
+  },
+  "plugin": {
+    "name": "Civic_Twin_Angel_Sharks_ap.V.07",
+    "version": "0.7.0",
+    "archiveFile": "Civic_Twin_Angel_Sharks_ap.V.07.zip",
+    "aliasArchives": [
+      "Civic_Twin_Angel_Sharks_ap.V.07.zip",
+      "Civic_twin_Angel_Sharks_wp.V.07.zip",
+      "civic-twin-v0.7.zip",
+      "v0.7.zip",
+      "Civic_Twin_Angel_Sharks_ap.V.06.zip",
+      "Civic_twin_Angel_Sharks_wp.V.06.zip",
+      "Civic_Twin_Angel_Sharks_ap.V.05.zip"
+    ],
+    "increment": 0.01,
+    "previousVersion": "0.6.0",
+    "previousArchive": "Civic_Twin_Angel_Sharks_ap.V.06.zip",
+    "phpRequirement": ">= 7.4 (tested through PHP 8.3)",
+    "wordpressRequirement": ">= 6.0",
+    "architecture": "Autodesk Civil 3D Solar Canopy Proposal Generator, Real-Time Executive Stakeholder PDF Modal Preview & Metadata Verification Audit, Autodesk AEC Data Model Granular BIM Simulation (linktr.ee/autodeskdata), Variable 10-Year Annual Cash Flow Ledger with User Overrides, Multi-Decadal Historical Solar Irradiance Simulation (TMY3/NSRDB), Native Standalone Leaflet 1.9.4 GIS Pre-Calibrated for Santa Barbara (100% Net-Zero Energy Simulator, LandXML 1.2 Export, Property Detail Layer)",
+    "targetCity": "City of Santa Barbara, CA",
+    "targetWebsite": "https://santabarbaraca.gov/",
+    "syncStatus": "synchronized",
+    "lastSync": "2026-10-12T08:35:00Z"
+  },
+  "metadataSnapshot": {
+    "version": "v4",
+    "status": "Production Certified",
+    "dailyBackupPolicy": "Automated GitHub PR staging & manifest snapshot"
+  }
+}

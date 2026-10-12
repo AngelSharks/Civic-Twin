@@ -37,14 +37,24 @@ export const LiveAudioPanel: React.FC<LiveAudioPanelProps> = ({ metadata, onClos
     sampleRate: number,
     numChannels: number,
   ): Promise<AudioBuffer> => {
-    const dataInt16 = new Int16Array(data.buffer);
-    const frameCount = dataInt16.length / numChannels;
-    const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+    if (!data || data.byteLength < 2) {
+      return ctx.createBuffer(Math.max(1, numChannels), 1, sampleRate);
+    }
+
+    const alignedLength = data.byteLength - (data.byteLength % 2);
+    if (alignedLength <= 0) {
+      return ctx.createBuffer(Math.max(1, numChannels), 1, sampleRate);
+    }
+
+    const dataInt16 = new Int16Array(data.buffer, data.byteOffset, alignedLength / 2);
+    const frameCount = Math.max(1, Math.floor(dataInt16.length / Math.max(1, numChannels)));
+    const buffer = ctx.createBuffer(Math.max(1, numChannels), frameCount, sampleRate);
 
     for (let channel = 0; channel < numChannels; channel++) {
       const channelData = buffer.getChannelData(channel);
       for (let i = 0; i < frameCount; i++) {
-        channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+        const val = dataInt16[i * numChannels + channel];
+        channelData[i] = typeof val === 'number' ? val / 32768.0 : 0;
       }
     }
     return buffer;
@@ -52,6 +62,7 @@ export const LiveAudioPanel: React.FC<LiveAudioPanelProps> = ({ metadata, onClos
 
   // Manually implemented encode function following instructions for raw PCM bytes
   const encodeAudio = (bytes: Uint8Array) => {
+    if (!bytes || bytes.length === 0) return '';
     let binary = '';
     const len = bytes.byteLength;
     for (let i = 0; i < len; i++) {
